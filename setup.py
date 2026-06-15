@@ -10,15 +10,18 @@ class handler(BaseHTTPRequestHandler):
         url  = f"https://{host}/api/webhook"
         req  = urllib.request.Request(
             f"https://api.telegram.org/bot{token}/setWebhook",
-            data=json.dumps({"url": url, "allowed_updates": ["message"]}).encode(),
+            data=json.dumps({
+                "url": url,
+                # FIX: добавлен callback_query — без него кнопки не работают
+                "allowed_updates": ["message", "callback_query"]
+            }).encode(),
             headers={"Content-Type": "application/json"}, method="POST")
         try:
             with urllib.request.urlopen(req, timeout=10) as r:
                 res = json.loads(r.read())
         except Exception as e:
             return self._j(500, {"error": str(e)})
-        self._j(200 if res.get("ok") else 400,
-                {"webhook": url, "telegram": res})
+        self._j(200 if res.get("ok") else 400, {"webhook": url, "telegram": res})
 
     def _j(self, code, data):
         body = json.dumps(data, ensure_ascii=False, indent=2).encode()
